@@ -1,9 +1,9 @@
 import scrapy
+from scrapy.crawler import CrawlerProcess
 
-
-class MetacriticSpider(scrapy.Spider):
+class MetacriticSpider_detail(scrapy.Spider):
     name = 'metacritic'
-    start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/pc/filtered']
+    start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/all']
 
     def parse(self, response):
         self.log('Visited: ' + response.url)
@@ -13,9 +13,6 @@ class MetacriticSpider(scrapy.Spider):
                 if detail_url:
                     detail_url = response.urljoin(detail_url)
                     yield scrapy.Request(url=detail_url,callback=self.parseDetail)
-                    yield scrapy.Request(url=(detail_url+'/critic-reviews'),callback=self.parse_critic_reviews)
-                    yield scrapy.Request(url=(detail_url+'/user-reviews'),callback=self.parse_user_reviews)
-                
         next_page = response.css('a[rel="next"]::attr(href)').extract_first()
         if next_page:
             next_page = response.urljoin(next_page)
@@ -41,6 +38,7 @@ class MetacriticSpider(scrapy.Spider):
         
         item = {
             'title':title_css,
+            'platform':response.css('div.product_title span a::text').extract_first().strip(),
             'metascore':metascore_css,
             'critic_amount':response.xpath("normalize-space(//div[@class='score_summary metascore_summary']//a/span/text())").extract_first(),
             'userscore':userscore_xpath,
@@ -48,6 +46,24 @@ class MetacriticSpider(scrapy.Spider):
             }
         
         yield item
+
+class MetacriticSpider_critic(scrapy.Spider):
+    name = 'metacritic'
+    start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/all']
+
+    def parse(self, response):
+        self.log('Visited: ' + response.url)
+        for table in response.css('table.clamp-list'):
+            for game in table.css('td.clamp-summary-wrap'):
+                detail_url = game.css('a.title::attr(href)').extract_first()
+                if detail_url:
+                    detail_url = response.urljoin(detail_url)
+                    yield scrapy.Request(url=(detail_url+'/critic-reviews'),callback=self.parse_critic_reviews)
+        next_page = response.css('a[rel="next"]::attr(href)').extract_first()
+        if next_page:
+            next_page = response.urljoin(next_page)
+            yield scrapy.Request(url=next_page,callback=self.parse)
+
 
     def parse_critic_reviews(self, response):
         for review in response.css('li.review.critic_review'):
@@ -64,6 +80,23 @@ class MetacriticSpider(scrapy.Spider):
                 'date':review.css('div.date::text').extract_first()
             }
             yield critic_reviews
+
+class MetacriticSpider_user(scrapy.Spider):
+    name = 'metacritic'
+    start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/all']
+
+    def parse(self, response):
+        self.log('Visited: ' + response.url)
+        for table in response.css('table.clamp-list'):
+            for game in table.css('td.clamp-summary-wrap'):
+                detail_url = game.css('a.title::attr(href)').extract_first()
+                if detail_url:
+                    detail_url = response.urljoin(detail_url)
+                    yield scrapy.Request(url=(detail_url+'/user-reviews'),callback=self.parse_user_reviews)
+        next_page = response.css('a[rel="next"]::attr(href)').extract_first()
+        if next_page:
+            next_page = response.urljoin(next_page)
+            yield scrapy.Request(url=next_page,callback=self.parse)
 
     def parse_user_reviews(self, response):
         for review in response.css('li.review.user_review'):
@@ -87,3 +120,27 @@ class MetacriticSpider(scrapy.Spider):
         if next_user_review_page:
             next_user_review_page = response.urljoin(next_user_review_page)
             yield scrapy.Request(url=next_user_review_page,callback=self.parse_user_reviews)
+
+
+process = CrawlerProcess(settings={
+    "FEEDS": {
+        "output_games.json": {"format": "json"},
+    },
+})
+process.crawl(MetacriticSpider_detail)
+
+
+process = CrawlerProcess(settings={
+    "FEEDS": {
+        "output_critic_reviews.json": {"format": "json"},
+    },
+})
+process.crawl(MetacriticSpider_critic)
+
+
+process = CrawlerProcess(settings={
+    "FEEDS": {
+        "output_user_reviews.json": {"format": "json"},
+    },
+})
+process.crawl(MetacriticSpider_user)
