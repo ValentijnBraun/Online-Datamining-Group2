@@ -23,22 +23,27 @@ class MetacriticSpider(scrapy.Spider):
 
     def parseDetail(self, response):
         self.log('Visited: ' + response.url)
-        details = response.css('div.summary_wrap')
-        if response.xpath('//*[@id="main"]/div/div[1]/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/div/div/a/div/span/text()').extract_first() != None:
-            metascorepath = '//*[@id="main"]/div/div[1]/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/div/div/a/div/span/text()'
-        else:
-            metascorepath = '//*[@id="main"]/div/div[1]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div/div/a/div/span/text()'
         
-        if response.xpath('normalize-space(//*[@id="main"]/div/div[1]/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/div/div/div[2]/p/span[2]/a/span/text())').extract_first() != "":
-            critic_amount_path = 'normalize-space(//*[@id="main"]/div/div[1]/div[1]/div[3]/div/div/div[2]/div[1]/div[1]/div/div/div[2]/p/span[2]/a/span/text())'
-        else:
-            critic_amount_path = 'normalize-space(//*[@id="main"]/div/div[1]/div[1]/div[3]/div/div[2]/div[1]/div[1]/div/div/div[2]/p/span[2]/a/span/text())'
+        title_css = response.css('div.product_title h1::text').extract_first()
+        title_xpath = response.xpath("//div[@class='product_title']//h1/text()").extract_first()
+        if title_css != title_xpath:
+            raise scrapy.exceptions.CloseSpider('STOPPING: Found different titles, CSS: {0}, Xpath: {1}'.format(title_css,title_xpath))
+        
+        metascore_css = response.css('a.metascore_anchor div.metascore_w span::text').extract_first()
+        metascore_xpath = response.xpath("//div[@class='score_summary metascore_summary']//a[@class='metascore_anchor']//span/text()").extract_first()
+        if metascore_css != metascore_xpath:
+            raise scrapy.exceptions.CloseSpider('STOPPING: Found different metascores for {0}, CSS: {1}, Xpath: {2}'.format(title_css,metascore_css,metascore_xpath))
 
+        userscore_css = response.css('div.summary_wrap div.metascore_w::text').extract_first()
+        userscore_xpath = response.xpath("//a[@class='metascore_anchor']/div/text()").extract_first()
+        if  userscore_css != userscore_xpath:
+            raise scrapy.exceptions.CloseSpider('STOPPING: Found different user score for {0}, CSS: {1}, Xpath: {2}'.format(title_css,userscore_css,userscore_xpath))
+        
         item = {
-            'title':response.css('div.product_title h1::text').extract_first(),
-            'metascore':response.xpath(metascorepath).extract_first(),
-            'critic_amount':response.xpath(critic_amount_path).extract_first(),
-            'userscore':details.css('div.metascore_w::text').extract_first(),
+            'title':title_css,
+            'metascore':metascore_css,
+            'critic_amount':response.xpath("normalize-space(//div[@class='score_summary metascore_summary']//a/span/text())").extract_first(),
+            'userscore':userscore_xpath,
             'userrating_amount':response.css('div.details.side_details div.score_summary div.summary span.count a::text').extract_first()
             }
         
