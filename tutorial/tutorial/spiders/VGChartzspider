@@ -1,0 +1,41 @@
+import scrapy
+import re 
+
+
+class VgchartzspiderSpider(scrapy.Spider):
+    name = 'VGChartzspider'
+    allowed_domains = ['www.vgchartz.com']
+    # start_urls = ['https://www.vgchartz.com/gamedb/']
+
+    results_per_page = 400
+    start_urls = [f'https://www.vgchartz.com/games/games.php?&results={results_per_page}']
+
+    def parse(self, response):
+        for row in response.xpath('//td[preceding::*[@id="photo3"]]/a[not(contains(text(), "Read the review"))]'):
+            yield {
+           # 'pos': row.xpath('.//preceding::td[2]/text()').get(),
+            'game_title': row.xpath('normalize-space(.//text())').get(),
+            'console': row.xpath('.//preceding::td[1]/div/a/div/img/@src').get(),
+            'publisher': row.xpath('normalize-space(.//following::td[2]/text())').get(),
+            'vgchartz_score': row.xpath('normalize-space(.//following::td[3]/text())').get(),
+            'critic_score': row.xpath('normalize-space(.//following::td[4]/text())').get(),
+            'user_score': row.xpath('normalize-space(.//following::td[5]/text())').get(),
+            'total_shipped': row.xpath('normalize-space(.//following::td[6]/text())').get(),
+            'release_date': row.xpath('normalize-space(.//following::td[7]/text())').get(),
+            'last_update': row.xpath('normalize-space(.//following::td[8]/text())').get(),
+            }
+        current_page_number_match = re.search(r'page=(\d+)', response.url)
+        if current_page_number_match:
+            current_page_number = int(current_page_number_match.group(1))
+        else:
+            current_page_number = 1
+
+        next_page_number = current_page_number + 1
+
+        if current_page_number_match:
+            next_page_url = re.sub(r'page=\d+', f'page={next_page_number}', response.url)
+        else:
+            next_page_url = response.url + f'&page={next_page_number}'
+
+        if next_page_url:
+            yield scrapy.Request(next_page_url, callback=self.parse)
