@@ -1,4 +1,4 @@
-# For some parts of this code are retrieved from ChatGPT(2023).
+# Some parts of this code are retrieved from ChatGPT(2023).
 #import all libraries 
 import scrapy
 import re 
