@@ -1,6 +1,7 @@
-# import Scrapy module
+# import Scrapy and sqlite
 
 import scrapy 
+import sqlite3
 
 # define the spider class
 class imdbgamescraper(scrapy.Spider):
@@ -73,3 +74,48 @@ class imdbgamescraper(scrapy.Spider):
         
         # 
         yield items
+
+
+class SQLitePipeline:
+    def open_spider(self, spider):
+        self.connection = sqlite3.connect('Gamedetails.db')
+        self.cursor = self.connection.cursor()
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS quotes (
+                Title TEXT PRIMARY KEY,
+                Released_Date TEXT,
+                Score TEXT,
+                Rating TEXT,
+                Director TEXT,
+                Star_1 TEXT,
+                Star_2 TEXT,
+                studio TEXT,
+                Location TEXT,
+            }
+
+
+
+            )
+        ''')
+
+    def close_spider(self, spider):
+        self.connection.close()
+
+    def process_item(self, item, spider):
+        self.cursor.execute('''
+            INSERT INTO quotes (text, author, tags)
+            VALUES (?, ?)
+        ''', (item['Title'], item['Released_Date']))
+        self.connection.commit()
+        return item
+
+
+# Run the scraper
+if __name__ == '__main__':
+    from scrapy.crawler import CrawlerProcess
+    process = CrawlerProcess(settings={
+        'ITEM_PIPELINES': {'__main__.SQLitePipeline': 300},
+    })
+    process.crawl(imdbgamescraper)
+    process.start()
+
