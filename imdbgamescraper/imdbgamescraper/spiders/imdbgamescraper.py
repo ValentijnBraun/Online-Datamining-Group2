@@ -55,7 +55,7 @@ class imdbgamescraper(scrapy.Spider):
         # Get the game's developer studio.
         studio = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[-1],
         # Get the game studios's Location.
-        Locaton = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[-2],
+        Location = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[-2],
 
         # Putting the data into a dictionary
         items = {
@@ -68,7 +68,7 @@ class imdbgamescraper(scrapy.Spider):
             "Star_1" :Star_1,
             "Star_2":Star_2,
             "studio":studio,
-            "Locaton" :Locaton,
+            "Location" :Location,
             }
         
         # 
