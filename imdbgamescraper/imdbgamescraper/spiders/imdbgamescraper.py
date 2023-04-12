@@ -53,7 +53,7 @@ class imdbgamescraper(scrapy.Spider):
         Star_1 = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[0],
         Star_2 = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[1],
         # Get the game's developer studio.
-        studio = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[-1],
+        Studio = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[-1],
         # Get the game studios's Location.
         Location = response.css("li.ipc-metadata-list__item.ipc-metadata-list-item--link > div > ul > li:nth-child(1) > a::text").getall()[-2],
 
@@ -67,7 +67,7 @@ class imdbgamescraper(scrapy.Spider):
             "Director":Director,
             "Star_1" :Star_1,
             "Star_2":Star_2,
-            "studio":studio,
+            "Studio":Studio,
             "Location" :Location,
             }
         
