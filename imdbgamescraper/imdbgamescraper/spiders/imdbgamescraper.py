@@ -81,7 +81,7 @@ class SQLitePipeline:
         self.connection = sqlite3.connect('Gamedetails.db')
         self.cursor = self.connection.cursor()
         self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS quotes (
+            CREATE TABLE IF NOT EXISTS Games (
                 Title TEXT PRIMARY KEY,
                 Released_Date TEXT,
                 Score TEXT,
@@ -103,9 +103,9 @@ class SQLitePipeline:
 
     def process_item(self, item, spider):
         self.cursor.execute('''
-            INSERT INTO quotes (text, author, tags)
-            VALUES (?, ?)
-        ''', (item['Title'], item['Released_Date']))
+            INSERT INTO quotes (Title, Released_Date, Score,Rating,Director,Star_1,Star_2,studio,Location)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (item['Title'], item['Released_Date'], item['Score'], item['Rating'], item['Director'], item['Star_1'], item['Star_2'], item['studio'], item['Location']))
         self.connection.commit()
         return item
 
