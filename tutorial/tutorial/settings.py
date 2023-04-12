@@ -62,9 +62,9 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'tutorial.pipelines.TutorialPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'tutorial.pipelines.DuplicatesPipeline': 2,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -77,7 +77,7 @@ AUTOTHROTTLE_MAX_DELAY = 60
 # each remote server
 AUTOTHROTTLE_TARGET_CONCURRENCY = 1000.0
 # Enable showing throttling stats for every response received:
-AUTOTHROTTLE_DEBUG = False
+AUTOTHROTTLE_DEBUG = True
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
