@@ -40,7 +40,7 @@ class imdbgamescraper(scrapy.Spider):
         # extract data from each game's page using CSS and xpath selectors
         
         # Get the game title.
-        Title = response.css("span.sc-afe43def-1.fDTGTb::text").get(),
+        Title = response.css("span.sc-afe43def-1.fDTGTb::text").get().strip(),
         # Get the game Released Date using css and xpath.
         Released_Date = response.css("div.sc-385ac629-3.kRUqXl > div.sc-52d569c6-0.kNzJA-D > ul > li:nth-child(2) > a::text").get(),
         Released_Date_Xpath = response.xpath("//div[1]/ul/li[2]/a/text()").get(),        # Get the game title.
