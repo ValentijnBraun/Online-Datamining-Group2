@@ -1,26 +1,44 @@
 import scrapy
 
-class OpenCriticSpider(scrapy.Spider):
-    name = 'opencritic'
+class OpenCriticSpider2(scrapy.Spider):
+    name = 'opencritic2'
     allowed_domains = ['opencritic.com']
     start_urls = ['https://opencritic.com/browse/all']
 
     def parse(self, response):
-        # scrape game items
+        # scraping game items
         for game in response.css('div.game-row'):
+            rank_css = game.css('div.rank div::text').get()
+            rank_xpath = game.xpath("normalize-space(div[@class='rank']/text())").get()
+            
+            score_css = game.css('div.score::text').get()
+            score_xpath = game.xpath("normalize-space(div[@class='score']/text())").get()
+            
+            tier_css = game.css('div.tier app-tier-display img::attr(alt)').get()
+            tier_xpath = game.xpath("normalize-space(div[@class='tier']/app-tier-display/img/@alt)").get()
+            
+            name_css = game.css('div.game-name a::text').get()
+            name_xpath = game.xpath("normalize-space(div[@class='game-name']/a/text())").get()
+            
+            platforms_css = game.css('div.platforms::text').get()
+            platforms_xpath = game.xpath("normalize-space(div[@class='platforms']/text())").get()
+            
+            release_date_css = game.css('div.release-date span::text').get()
+            release_date_xpath = game.xpath("normalize-space(div[@class='release-date']/span/text())").get()
+            
             yield {
-                'rank': game.css('div.rank::text').get(),
-                'score': game.css('div.score::text').get(),
-                'tier': game.css('div.tier app-tier-display img::attr(alt)').get(),
-                'name': game.css('div.game-name a::text').get(),
-                'platforms': game.css('div.platforms::text').get(),
-                'release_date': game.css('div.first-release-date span::text').get()
+                'rank': rank_css,
+                'score': score_css,
+                'tier': tier_css,
+                'name': name_css,
+                'platforms': platforms_css,
+                'release_date': release_date_css
             }
 
         # follow pagination links
         next_page = response.css('div.col-md-12 a[rel="next"]::attr(href)').get()
         if next_page:
             current_page = int(next_page.split('=')[-1])
-            #Only 50 for speed purpose since we already have a larger scraper 
-            if current_page <= 50:
+            if current_page <= 200:
                 yield scrapy.Request(response.urljoin(next_page), callback=self.parse)
+
