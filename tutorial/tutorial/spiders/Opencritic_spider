@@ -1,0 +1,26 @@
+import scrapy
+
+class OpenCriticSpider(scrapy.Spider):
+    name = 'opencritic'
+    allowed_domains = ['opencritic.com']
+    start_urls = ['https://opencritic.com/browse/all']
+
+    def parse(self, response):
+        # scrape game items
+        for game in response.css('div.game-row'):
+            yield {
+                'rank': game.css('div.rank::text').get(),
+                'score': game.css('div.score::text').get(),
+                'tier': game.css('div.tier app-tier-display img::attr(alt)').get(),
+                'name': game.css('div.game-name a::text').get(),
+                'platforms': game.css('div.platforms::text').get(),
+                'release_date': game.css('div.first-release-date span::text').get()
+            }
+
+        # follow pagination links
+        next_page = response.css('div.col-md-12 a[rel="next"]::attr(href)').get()
+        if next_page:
+            current_page = int(next_page.split('=')[-1])
+            #Only 50 for speed purpose since we already have a larger scraper 
+            if current_page <= 50:
+                yield scrapy.Request(response.urljoin(next_page), callback=self.parse)
