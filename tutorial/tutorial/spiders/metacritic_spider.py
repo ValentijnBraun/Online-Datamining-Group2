@@ -3,24 +3,32 @@ from scrapy.crawler import CrawlerProcess
 
 class MetacriticSpider_detail(scrapy.Spider):
     name = 'metacritic'
+    # Get the starting page with Regex
     start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/all']
 
     def parse(self, response):
         self.log('Visited: ' + response.url)
+        # Loop through each seperate item
         for table in response.css('table.clamp-list'):
             for game in table.css('td.clamp-summary-wrap'):
                 detail_url = game.css('a.title::attr(href)').extract_first()
                 if detail_url:
                     detail_url = response.urljoin(detail_url)
+                    # Go to the detail page
                     yield scrapy.Request(url=detail_url,callback=self.parseDetail)
+        # Get the next page of the listing page
         next_page = response.css('a[rel="next"]::attr(href)').extract_first()
+        # Check if there are any next pages left
         if next_page:
             next_page = response.urljoin(next_page)
+            # go to the next listing page
             yield scrapy.Request(url=next_page,callback=self.parse)
 
     def parseDetail(self, response):
         self.log('Visited: ' + response.url)
         
+        # Unit testing for title, metascore, and userscore
+        # Stop spider if testing fails
         title_css = response.css('div.product_title h1::text').extract_first().strip()
         title_xpath = response.xpath("normalize-space(//div[@class='product_title']//h1/text())").extract_first()
         if title_css != title_xpath:
@@ -36,6 +44,7 @@ class MetacriticSpider_detail(scrapy.Spider):
         if  userscore_css != userscore_xpath:
             raise scrapy.exceptions.CloseSpider('STOPPING: Found different user score for {0}, CSS: {1}, Xpath: {2}'.format(title_css,userscore_css,userscore_xpath))
         
+        # Check if css path is found, otherwise use different path: there are two different pages on metacritic
         platform_path = 'div.product_title span a::text'
         if response.css(platform_path).extract_first() == None:
             platform_path = 'div.product_title span::text'
@@ -53,23 +62,30 @@ class MetacriticSpider_detail(scrapy.Spider):
 
 class MetacriticSpider_critic(scrapy.Spider):
     name = 'metacritic'
+    # Get the starting page with regex
     start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/all']
 
     def parse(self, response):
         self.log('Visited: ' + response.url)
+        # Loop through each seperate item on the listing page
         for table in response.css('table.clamp-list'):
             for game in table.css('td.clamp-summary-wrap'):
                 detail_url = game.css('a.title::attr(href)').extract_first()
                 if detail_url:
                     detail_url = response.urljoin(detail_url)
+                    # Go to the critic page of a specific game
                     yield scrapy.Request(url=(detail_url+'/critic-reviews'),callback=self.parse_critic_reviews)
+        # Get the next page of the listing page
         next_page = response.css('a[rel="next"]::attr(href)').extract_first()
+        # Check if there are any next pages left
         if next_page:
             next_page = response.urljoin(next_page)
+            # go to the next listing page
             yield scrapy.Request(url=next_page,callback=self.parse)
 
 
     def parse_critic_reviews(self, response):
+        # Loop through all the reviews
         for review in response.css('li.review.critic_review'):
             name_path = 'div.source a::text'
             if review.css(name_path).extract_first() == None or review.css(name_path).extract_first().strip() == "":
@@ -80,9 +96,9 @@ class MetacriticSpider_critic(scrapy.Spider):
                 platform_path = 'div.product_title span::text'
 
             critic_reviews = {
-                'game':response.css('div.product_title h1::text').extract_first(),
+                'game':response.css('div.product_title h1::text').extract_first().strip(),
                 'platform':response.css(platform_path).extract_first().strip(),
-                'critic_name':review.css(name_path).extract_first(),
+                'critic_name':review.css(name_path).extract_first().strip(),
                 'grade':review.css('div.metascore_w::text').extract_first(),
                 'review':review.css('div.review_body::text').extract_first().strip(),
                 'date':review.css('div.date::text').extract_first()
@@ -91,43 +107,51 @@ class MetacriticSpider_critic(scrapy.Spider):
 
 class MetacriticSpider_user(scrapy.Spider):
     name = 'metacritic'
+    # Get the starting page with regex
     start_urls = [f'https://www.metacritic.com/browse/games/score/metascore/all/all']
 
     def parse(self, response):
         self.log('Visited: ' + response.url)
+        # Loop through each seperate item on the listing page
         for table in response.css('table.clamp-list'):
             for game in table.css('td.clamp-summary-wrap'):
                 detail_url = game.css('a.title::attr(href)').extract_first()
                 if detail_url:
                     detail_url = response.urljoin(detail_url)
+                    # Go to the critic page of a specific game
                     yield scrapy.Request(url=(detail_url+'/user-reviews'),callback=self.parse_user_reviews)
+        # Get the next page of the listing page
         next_page = response.css('a[rel="next"]::attr(href)').extract_first()
+        # Check if there are any next pages left
         if next_page:
             next_page = response.urljoin(next_page)
+            # go to the next listing page
             yield scrapy.Request(url=next_page,callback=self.parse)
 
     def parse_user_reviews(self, response):
+        # Loop through all the reviews
         for review in response.css('li.review.user_review'):
+            # Check if path is found, otherwise use different path: there are two different pages on metacritic
             name_path = 'div.name a::text'
             if review.css(name_path).extract_first() == None or review.css(name_path).extract_first().strip() == "":
                 name_path = 'div.name::text'
-                
+            # Check if css path is found, otherwise use different path: there are two different pages on metacritic    
             if review.css(name_path).extract_first().strip() == "":
                 username = review.xpath("normalize-space(//div[@class='review_critic']/div[@class='name']/a/text())").extract_first()
             else: 
                 username = review.css(name_path).extract_first().strip()
-
+            # Check if css path is found, otherwise use different path: there are two different pages on metacritic
             platform_path = 'div.product_title span a::text'
             if response.css(platform_path).extract_first() == None:
                 platform_path = 'div.product_title span::text'
             
             user_reviews = {
-                'game':response.css('div.product_title h1::text').extract_first(),
+                'game':response.css('div.product_title h1::text').extract_first().strip(),
                 'platform':response.css(platform_path).extract_first().strip(),
                 'username':username,
-                'grade':review.css('div.metascore_w::text').extract_first(),
+                'grade':review.css('div.metascore_w::text').extract_first().strip(),
                 'review':review.css('div.review_body span::text').extract_first().strip(),
-                'date':review.css('div.date::text').extract_first(),
+                'date':review.css('div.date::text').extract_first().strip(),
                 'thumbs_helpful':review.css('div.review_helpful span.total_ups::text').extract_first(),
                 'thumbs_total':review.css('div.review_helpful span.total_thumbs::text').extract_first()
             }
@@ -138,7 +162,7 @@ class MetacriticSpider_user(scrapy.Spider):
             next_user_review_page = response.urljoin(next_user_review_page)
             yield scrapy.Request(url=next_user_review_page,callback=self.parse_user_reviews)
 
-
+# Run multiple spiders at once and save the output in 3 seperate files
 process = CrawlerProcess(settings={
     "FEEDS": {
         "game_details.json": {"format": "json"},
